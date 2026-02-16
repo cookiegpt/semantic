@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON & XML Beautifier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .formatter-section {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s;
+        }
+
+        .formatter-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #334155;
+        }
+
+        .section-icon {
+            font-size: 1.8rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .input-wrapper {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 15px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea::placeholder {
+            color: #475569;
+        }
+
+        .code-editor {
+            width: 100%;
+            min-height: 600px;
+            padding: 15px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            overflow: auto;
+            white-space: pre;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .code-editor:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .code-editor:empty:before {
+            content: attr(data-placeholder);
+            color: #475569;
+        }
+
+        /* Syntax Highlighting */
+        .json-key {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        .json-string {
+            color: #34d399;
+        }
+
+        .json-number {
+            color: #fbbf24;
+        }
+
+        .json-boolean {
+            color: #f472b6;
+        }
+
+        .json-null {
+            color: #a78bfa;
+        }
+
+        .xml-tag {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+
+        .xml-attr {
+            color: #fbbf24;
+        }
+
+        .xml-value {
+            color: #34d399;
+        }
+
+        .xml-comment {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-compare {
+            background: #0f766e;
+            color: white;
+        }
+
+        .btn-compare:hover {
+            background: #0d9488;
+        }
+
+        /* Compare Modal */
+        .compare-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .compare-modal.active {
+            display: block;
+        }
+
+        .compare-container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 30px;
+            position: relative;
+        }
+
+        .compare-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #334155;
+        }
+
+        .compare-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .close-modal {
+            background: #ef4444;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .close-modal:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .compare-panel {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 20px;
+            border: 2px solid #334155;
+        }
+
+        .compare-panel h3 {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+
+        .compare-content {
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 500px;
+            max-height: 700px;
+            overflow: auto;
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #e2e8f0;
+            white-space: pre;
+        }
+
+        .compare-textarea {
+            width: 100%;
+            min-height: 500px;
+            max-height: 700px;
+            padding: 15px;
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 8px;
+            color: #e2e8f0;
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        .compare-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .diff-added {
+            background: rgba(52, 211, 153, 0.2);
+            border-left: 3px solid #34d399;
+            padding-left: 5px;
+        }
+
+        .diff-removed {
+            background: rgba(239, 68, 68, 0.2);
+            border-left: 3px solid #ef4444;
+            padding-left: 5px;
+        }
+
+        .diff-changed {
+            background: rgba(251, 191, 36, 0.2);
+            border-left: 3px solid #fbbf24;
+            padding-left: 5px;
+        }
+
+        .error-message {
+            background: #7f1d1d;
+            border: 1px solid #991b1b;
+            color: #fecaca;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .success-message {
+            background: #064e3b;
+            border: 1px solid #065f46;
+            color: #86efac;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .compare-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .formatter-section {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✨ JSON & XML Beautifier</h1>
+            <p class="subtitle">Format and beautify your JSON and XML code instantly</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- JSON Section -->
+            <div class="formatter-section">
+                <div class="section-header">
+                    <span class="section-icon">📋</span>
+                    <h2 class="section-title">JSON Formatter</h2>
+                </div>
+
+                <div class="controls">
+                    <button class="btn-secondary" id="clearJsonBtn">
+                        🗑️ Clear
+                    </button>
+                    <button class="btn-primary" id="prettifyJsonBtn">
+                        ✨ Prettify
+                    </button>
+                    <button class="btn-compare" id="compareJsonBtn">
+                        🔄 Compare
+                    </button>
+                </div>
+
+                <div class="input-wrapper">
+                    <div 
+                        id="jsonInput" 
+                        class="code-editor"
+                        contenteditable="true"
+                        spellcheck="false"
+                        data-placeholder='Paste your minified JSON here... e.g., {"name":"John","age":30}'
+                    ></div>
+                </div>
+
+                <div class="error-message" id="jsonError"></div>
+                <div class="success-message" id="jsonSuccess"></div>
+            </div>
+
+            <!-- XML Section -->
+            <div class="formatter-section">
+                <div class="section-header">
+                    <span class="section-icon">📄</span>
+                    <h2 class="section-title">XML Formatter</h2>
+                </div>
+
+                <div class="controls">
+                    <button class="btn-secondary" id="clearXmlBtn">
+                        🗑️ Clear
+                    </button>
+                    <button class="btn-primary" id="prettifyXmlBtn">
+                        ✨ Prettify
+                    </button>
+                    <button class="btn-compare" id="compareXmlBtn">
+                        🔄 Compare
+                    </button>
+                </div>
+
+                <div class="input-wrapper">
+                    <div 
+                        id="xmlInput" 
+                        class="code-editor"
+                        contenteditable="true"
+                        spellcheck="false"
+                        data-placeholder='Paste your XML here... e.g., <root><item>value</item></root>'
+                    ></div>
+                </div>
+
+                <div class="error-message" id="xmlError"></div>
+                <div class="success-message" id="xmlSuccess"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Modal -->
+    <div class="compare-modal" id="compareModal">
+        <div class="compare-container">
+            <div class="compare-header">
+                <h2 class="compare-title" id="compareModalTitle">Compare JSON</h2>
+                <button class="close-modal" id="closeModal">×</button>
+            </div>
+
+            <div class="compare-grid">
+                <div class="compare-panel">
+                    <h3>First Document</h3>
+                    <textarea 
+                        class="compare-textarea" 
+                        id="compareInput1" 
+                        placeholder="Paste first JSON/XML here..."
+                    ></textarea>
+                </div>
+
+                <div class="compare-panel">
+                    <h3>Second Document</h3>
+                    <textarea 
+                        class="compare-textarea" 
+                        id="compareInput2" 
+                        placeholder="Paste second JSON/XML here..."
+                    ></textarea>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; margin-top: 20px; gap: 15px;">
+                <button class="btn-primary" id="runCompareBtn" style="padding: 12px 40px;">
+                    🔍 Compare
+                </button>
+                <button class="btn-secondary" id="clearCompareBtn" style="padding: 12px 40px;">
+                    🗑️ Clear Both
+                </button>
+            </div>
+
+            <div id="compareResults" style="margin-top: 30px; display: none;">
+                <h3 style="color: #94a3b8; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 0.5px;">Comparison Results</h3>
+                <div class="compare-grid">
+                    <div class="compare-panel">
+                        <h3>First Document (Formatted)</h3>
+                        <div class="compare-content" id="compareResult1"></div>
+                    </div>
+                    <div class="compare-panel">
+                        <h3>Second Document (Formatted)</h3>
+                        <div class="compare-content" id="compareResult2"></div>
+                    </div>
+                </div>
+                <div id="compareStats" style="margin-top: 20px; padding: 15px; background: #0f172a; border-radius: 8px; border: 2px solid #334155;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== JSON FORMATTER ====================
+        
+        const jsonInput = document.getElementById('jsonInput');
+        const jsonError = document.getElementById('jsonError');
+        const jsonSuccess = document.getElementById('jsonSuccess');
+        const prettifyJsonBtn = document.getElementById('prettifyJsonBtn');
+        const clearJsonBtn = document.getElementById('clearJsonBtn');
+
+        // Prettify JSON
+        prettifyJsonBtn.addEventListener('click', () => {
+            const input = jsonInput.textContent.trim();
+            
+            hideMessages('json');
+
+            if (!input) {
+                showError('json', 'Please enter some JSON code.');
+                return;
+            }
+
+            try {
+                // Parse and format JSON
+                const parsed = JSON.parse(input);
+                const formatted = JSON.stringify(parsed, null, 2);
+                
+                // Apply syntax highlighting and update editor
+                jsonInput.innerHTML = syntaxHighlightJSON(formatted);
+                
+                showSuccess('json', 'JSON formatted successfully!');
+            } catch (error) {
+                showError('json', `Invalid JSON: ${error.message}`);
+            }
+        });
+
+        // Clear JSON
+        clearJsonBtn.addEventListener('click', () => {
+            jsonInput.innerHTML = '';
+            hideMessages('json');
+        });
+
+        // Compare JSON
+        document.getElementById('compareJsonBtn').addEventListener('click', () => {
+            document.getElementById('compareModalTitle').textContent = 'Compare JSON';
+            document.getElementById('compareModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Pre-fill first input with current content if any
+            const currentContent = jsonInput.textContent.trim();
+            if (currentContent) {
+                document.getElementById('compareInput1').value = currentContent;
+            }
+        });
+
+        // JSON Syntax Highlighting
+        function syntaxHighlightJSON(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, 
+                function (match) {
+                    let cls = 'json-number';
+                    
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = 'json-key';
+                        } else {
+                            cls = 'json-string';
+                        }
+                    } else if (/true|false/.test(match)) {
+                        cls = 'json-boolean';
+                    } else if (/null/.test(match)) {
+                        cls = 'json-null';
+                    }
+                    
+                    return '<span class="' + cls + '">' + match + '</span>';
+                }
+            );
+        }
+
+        // ==================== XML FORMATTER ====================
+        
+        const xmlInput = document.getElementById('xmlInput');
+        const xmlError = document.getElementById('xmlError');
+        const xmlSuccess = document.getElementById('xmlSuccess');
+        const prettifyXmlBtn = document.getElementById('prettifyXmlBtn');
+        const clearXmlBtn = document.getElementById('clearXmlBtn');
+
+        // Prettify XML
+        prettifyXmlBtn.addEventListener('click', () => {
+            const input = xmlInput.textContent.trim();
+            
+            hideMessages('xml');
+
+            if (!input) {
+                showError('xml', 'Please enter some XML code.');
+                return;
+            }
+
+            try {
+                // Validate XML using DOMParser
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(input, 'text/xml');
+                
+                // Check for parsing errors
+                const parserError = xmlDoc.querySelector('parsererror');
+                if (parserError) {
+                    throw new Error('Invalid XML structure');
+                }
+
+                // Format XML
+                const formatted = formatXML(input);
+                
+                // Apply syntax highlighting and update editor
+                xmlInput.innerHTML = syntaxHighlightXML(formatted);
+                
+                showSuccess('xml', 'XML formatted successfully!');
+            } catch (error) {
+                showError('xml', `Invalid XML: ${error.message}`);
+            }
+        });
+
+        // Clear XML
+        clearXmlBtn.addEventListener('click', () => {
+            xmlInput.innerHTML = '';
+            hideMessages('xml');
+        });
+
+        // Compare XML
+        document.getElementById('compareXmlBtn').addEventListener('click', () => {
+            document.getElementById('compareModalTitle').textContent = 'Compare XML';
+            document.getElementById('compareModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Pre-fill first input with current content if any
+            const currentContent = xmlInput.textContent.trim();
+            if (currentContent) {
+                document.getElementById('compareInput1').value = currentContent;
+            }
+        });
+
+        // XML Syntax Highlighting
+        function syntaxHighlightXML(xml) {
+            xml = xml.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            // Highlight tags
+            xml = xml.replace(/(&lt;\/?[\w:]+)(.*?)(&gt;)/g, function(match, p1, p2, p3) {
+                // Highlight attributes within tags
+                const highlightedAttrs = p2.replace(/([\w:]+)=(["'])(.*?)\2/g, 
+                    '<span class="xml-attr">$1</span>=<span class="xml-value">$2$3$2</span>');
+                
+                return '<span class="xml-tag">' + p1 + '</span>' + highlightedAttrs + '<span class="xml-tag">' + p3 + '</span>';
+            });
+            
+            // Highlight comments
+            xml = xml.replace(/(&lt;!--.*?--&gt;)/g, '<span class="xml-comment">$1</span>');
+            
+            return xml;
+        }
+
+        // XML Formatter Function
+        function formatXML(xml) {
+            const PADDING = '  '; // 2 spaces for indentation
+            let formatted = '';
+            let indent = 0;
+
+            // Split by tags
+            xml.split(/(<[^>]+>)/g).forEach(node => {
+                if (!node.trim()) return;
+
+                const matches = node.match(/^<\/(\w+)/);
+                if (matches) {
+                    // Closing tag
+                    indent = Math.max(0, indent - 1);
+                    formatted += PADDING.repeat(indent) + node.trim() + '\n';
+                } else if (node.match(/^<\w+[^>]*>.*<\/\w+>$/)) {
+                    // Self-contained tag (e.g., <tag>value</tag>)
+                    formatted += PADDING.repeat(indent) + node.trim() + '\n';
+                } else if (node.match(/^<\w+/) || node.match(/^<\?/)) {
+                    // Opening tag or declaration
+                    formatted += PADDING.repeat(indent) + node.trim() + '\n';
+                    if (!node.match(/\/>$/)) {
+                        indent++;
+                    }
+                } else if (node.match(/^<!--/)) {
+                    // Comment
+                    formatted += PADDING.repeat(indent) + node.trim() + '\n';
+                } else {
+                    // Text content
+                    const text = node.trim();
+                    if (text) {
+                        formatted += PADDING.repeat(indent) + text + '\n';
+                    }
+                }
+            });
+
+            return formatted.trim();
+        }
+
+        // ==================== UTILITY FUNCTIONS ====================
+        
+        function showError(type, message) {
+            const errorElement = type === 'json' ? jsonError : xmlError;
+            errorElement.textContent = '❌ ' + message;
+            errorElement.style.display = 'block';
+            
+            setTimeout(() => {
+                errorElement.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(type, message) {
+            const successElement = type === 'json' ? jsonSuccess : xmlSuccess;
+            successElement.textContent = '✅ ' + message;
+            successElement.style.display = 'block';
+            
+            setTimeout(() => {
+                successElement.style.display = 'none';
+            }, 3000);
+        }
+
+        function hideMessages(type) {
+            if (type === 'json') {
+                jsonError.style.display = 'none';
+                jsonSuccess.style.display = 'none';
+            } else {
+                xmlError.style.display = 'none';
+                xmlSuccess.style.display = 'none';
+            }
+        }
+
+        // Auto-detect and show hints
+        jsonInput.addEventListener('input', () => {
+            const text = jsonInput.value.trim();
+            if (text && !text.startsWith('{') && !text.startsWith('[')) {
+                // Could add hint that it might not be JSON
+            }
+        });
+
+        xmlInput.addEventListener('input', () => {
+            const text = xmlInput.value.trim();
+            if (text && !text.startsWith('<')) {
+                // Could add hint that it might not be XML
+            }
+        });
+
+        // ==================== COMPARE MODAL FUNCTIONALITY ====================
+        
+        const compareModal = document.getElementById('compareModal');
+        const closeModal = document.getElementById('closeModal');
+        const compareInput1 = document.getElementById('compareInput1');
+        const compareInput2 = document.getElementById('compareInput2');
+        const runCompareBtn = document.getElementById('runCompareBtn');
+        const clearCompareBtn = document.getElementById('clearCompareBtn');
+        const compareResults = document.getElementById('compareResults');
+        const compareResult1 = document.getElementById('compareResult1');
+        const compareResult2 = document.getElementById('compareResult2');
+        const compareStats = document.getElementById('compareStats');
+
+        // Close modal
+        closeModal.addEventListener('click', () => {
+            compareModal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        });
+
+        // Close modal on outside click
+        compareModal.addEventListener('click', (e) => {
+            if (e.target === compareModal) {
+                compareModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Clear compare inputs
+        clearCompareBtn.addEventListener('click', () => {
+            compareInput1.value = '';
+            compareInput2.value = '';
+            compareResults.style.display = 'none';
+        });
+
+        // Run comparison
+        runCompareBtn.addEventListener('click', () => {
+            const input1 = compareInput1.value.trim();
+            const input2 = compareInput2.value.trim();
+            const modalTitle = document.getElementById('compareModalTitle').textContent;
+            const isJSON = modalTitle.includes('JSON');
+
+            if (!input1 || !input2) {
+                alert('Please enter content in both text areas');
+                return;
+            }
+
+            try {
+                let formatted1, formatted2;
+
+                if (isJSON) {
+                    // Parse and format JSON
+                    const parsed1 = JSON.parse(input1);
+                    const parsed2 = JSON.parse(input2);
+                    formatted1 = JSON.stringify(parsed1, null, 2);
+                    formatted2 = JSON.stringify(parsed2, null, 2);
+
+                    // Apply syntax highlighting
+                    compareResult1.innerHTML = syntaxHighlightJSON(formatted1);
+                    compareResult2.innerHTML = syntaxHighlightJSON(formatted2);
+                } else {
+                    // Validate and format XML
+                    const parser = new DOMParser();
+                    const xmlDoc1 = parser.parseFromString(input1, 'text/xml');
+                    const xmlDoc2 = parser.parseFromString(input2, 'text/xml');
+
+                    if (xmlDoc1.querySelector('parsererror') || xmlDoc2.querySelector('parsererror')) {
+                        throw new Error('Invalid XML structure');
+                    }
+
+                    formatted1 = formatXML(input1);
+                    formatted2 = formatXML(input2);
+
+                    // Apply syntax highlighting
+                    compareResult1.innerHTML = syntaxHighlightXML(formatted1);
+                    compareResult2.innerHTML = syntaxHighlightXML(formatted2);
+                }
+
+                // Show results
+                compareResults.style.display = 'block';
+
+                // Calculate and show statistics
+                const lines1 = formatted1.split('\n');
+                const lines2 = formatted2.split('\n');
+                const identical = formatted1 === formatted2;
+
+                let statsHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">';
+                
+                if (identical) {
+                    statsHTML += '<div style="color: #34d399; font-weight: 600; font-size: 1.1rem;">✅ Documents are identical!</div>';
+                } else {
+                    statsHTML += '<div style="color: #fbbf24; font-weight: 600; font-size: 1.1rem;">⚠️ Documents differ</div>';
+                }
+
+                statsHTML += `
+                    <div>
+                        <span style="color: #94a3b8; font-size: 0.9rem;">First Document:</span>
+                        <span style="color: #e2e8f0; font-weight: 600; margin-left: 10px;">${lines1.length} lines</span>
+                    </div>
+                    <div>
+                        <span style="color: #94a3b8; font-size: 0.9rem;">Second Document:</span>
+                        <span style="color: #e2e8f0; font-weight: 600; margin-left: 10px;">${lines2.length} lines</span>
+                    </div>
+                    <div>
+                        <span style="color: #94a3b8; font-size: 0.9rem;">Size Difference:</span>
+                        <span style="color: #e2e8f0; font-weight: 600; margin-left: 10px;">${Math.abs(formatted1.length - formatted2.length)} characters</span>
+                    </div>
+                `;
+                statsHTML += '</div>';
+
+                compareStats.innerHTML = statsHTML;
+
+                // Scroll to results
+                compareResults.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
