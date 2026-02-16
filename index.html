@@ -362,21 +362,27 @@
         }
 
         .diff-added {
-            background: rgba(52, 211, 153, 0.2);
-            border-left: 3px solid #34d399;
-            padding-left: 5px;
+            background: rgba(52, 211, 153, 0.25);
+            border-left: 4px solid #34d399;
+            padding-left: 8px;
+            display: block;
+            margin: 2px 0;
         }
 
         .diff-removed {
-            background: rgba(239, 68, 68, 0.2);
-            border-left: 3px solid #ef4444;
-            padding-left: 5px;
+            background: rgba(239, 68, 68, 0.25);
+            border-left: 4px solid #ef4444;
+            padding-left: 8px;
+            display: block;
+            margin: 2px 0;
         }
 
         .diff-changed {
-            background: rgba(251, 191, 36, 0.2);
-            border-left: 3px solid #fbbf24;
-            padding-left: 5px;
+            background: rgba(251, 191, 36, 0.25);
+            border-left: 4px solid #fbbf24;
+            padding-left: 8px;
+            display: block;
+            margin: 2px 0;
         }
 
         .error-message {
@@ -572,10 +578,13 @@
             </div>
 
             <div style="display: flex; justify-content: center; margin-top: 20px; gap: 15px;">
-                <button class="btn-primary" id="runCompareBtn" style="padding: 12px 40px;">
-                    🔍 Compare
+                <button class="btn-primary" id="runCompareLineBtn" style="padding: 12px 30px;">
+                    📄 Line Diff
                 </button>
-                <button class="btn-secondary" id="clearCompareBtn" style="padding: 12px 40px;">
+                <button class="btn-primary" id="runCompareCharBtn" style="padding: 12px 30px;">
+                    🔍 Character Diff
+                </button>
+                <button class="btn-secondary" id="clearCompareBtn" style="padding: 12px 30px;">
                     🗑️ Clear Both
                 </button>
             </div>
@@ -847,7 +856,8 @@
         const closeModal = document.getElementById('closeModal');
         const compareInput1 = document.getElementById('compareInput1');
         const compareInput2 = document.getElementById('compareInput2');
-        const runCompareBtn = document.getElementById('runCompareBtn');
+        const runCompareLineBtn = document.getElementById('runCompareLineBtn');
+        const runCompareCharBtn = document.getElementById('runCompareCharBtn');
         const clearCompareBtn = document.getElementById('clearCompareBtn');
         const compareResults = document.getElementById('compareResults');
         const compareResult1 = document.getElementById('compareResult1');
@@ -875,8 +885,18 @@
             compareResults.style.display = 'none';
         });
 
-        // Run comparison
-        runCompareBtn.addEventListener('click', () => {
+        // Line-by-line comparison (no character highlighting)
+        runCompareLineBtn.addEventListener('click', () => {
+            runComparison('line');
+        });
+
+        // Character-level comparison
+        runCompareCharBtn.addEventListener('click', () => {
+            runComparison('char');
+        });
+
+        // Main comparison function
+        function runComparison(mode) {
             const input1 = compareInput1.value.trim();
             const input2 = compareInput2.value.trim();
             const modalTitle = document.getElementById('compareModalTitle').textContent;
@@ -896,10 +916,6 @@
                     const parsed2 = JSON.parse(input2);
                     formatted1 = JSON.stringify(parsed1, null, 2);
                     formatted2 = JSON.stringify(parsed2, null, 2);
-
-                    // Apply syntax highlighting
-                    compareResult1.innerHTML = syntaxHighlightJSON(formatted1);
-                    compareResult2.innerHTML = syntaxHighlightJSON(formatted2);
                 } else {
                     // Validate and format XML
                     const parser = new DOMParser();
@@ -912,18 +928,61 @@
 
                     formatted1 = formatXML(input1);
                     formatted2 = formatXML(input2);
-
-                    // Apply syntax highlighting
-                    compareResult1.innerHTML = syntaxHighlightXML(formatted1);
-                    compareResult2.innerHTML = syntaxHighlightXML(formatted2);
                 }
+
+                // Compare line by line
+                const lines1 = formatted1.split('\n');
+                const lines2 = formatted2.split('\n');
+                const maxLines = Math.max(lines1.length, lines2.length);
+
+                let highlighted1 = '';
+                let highlighted2 = '';
+                let differenceCount = 0;
+
+                for (let i = 0; i < maxLines; i++) {
+                    const line1 = lines1[i] !== undefined ? lines1[i] : '';
+                    const line2 = lines2[i] !== undefined ? lines2[i] : '';
+
+                    if (line1 !== line2) {
+                        differenceCount++;
+                        
+                        // Line exists in both but different
+                        if (lines1[i] !== undefined && lines2[i] !== undefined) {
+                            if (mode === 'char') {
+                                // Character-level diff
+                                const charDiff = highlightCharDifferences(line1, line2);
+                                highlighted1 += '<span class="diff-changed">' + charDiff.line1 + '</span>\n';
+                                highlighted2 += '<span class="diff-changed">' + charDiff.line2 + '</span>\n';
+                            } else {
+                                // Line-level diff only
+                                highlighted1 += '<span class="diff-changed">' + escapeHtml(line1) + '</span>\n';
+                                highlighted2 += '<span class="diff-changed">' + escapeHtml(line2) + '</span>\n';
+                            }
+                        }
+                        // Line only in first document
+                        else if (lines1[i] !== undefined) {
+                            highlighted1 += '<span class="diff-removed">' + escapeHtml(line1) + '</span>\n';
+                            highlighted2 += '<span style="color: #64748b; font-style: italic;">(line missing)</span>\n';
+                        }
+                        // Line only in second document
+                        else {
+                            highlighted1 += '<span style="color: #64748b; font-style: italic;">(line missing)</span>\n';
+                            highlighted2 += '<span class="diff-added">' + escapeHtml(line2) + '</span>\n';
+                        }
+                    } else {
+                        highlighted1 += escapeHtml(line1) + '\n';
+                        highlighted2 += escapeHtml(line2) + '\n';
+                    }
+                }
+
+                // Display results
+                compareResult1.innerHTML = highlighted1;
+                compareResult2.innerHTML = highlighted2;
 
                 // Show results
                 compareResults.style.display = 'block';
 
                 // Calculate and show statistics
-                const lines1 = formatted1.split('\n');
-                const lines2 = formatted2.split('\n');
                 const identical = formatted1 === formatted2;
 
                 let statsHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">';
@@ -931,7 +990,39 @@
                 if (identical) {
                     statsHTML += '<div style="color: #34d399; font-weight: 600; font-size: 1.1rem;">✅ Documents are identical!</div>';
                 } else {
-                    statsHTML += '<div style="color: #fbbf24; font-weight: 600; font-size: 1.1rem;">⚠️ Documents differ</div>';
+                    const modeLabel = mode === 'char' ? '🔍 Character-level diff' : '📄 Line-level diff';
+                    statsHTML += `
+                        <div style="color: #fbbf24; font-weight: 600; font-size: 1.1rem;">⚠️ Found ${differenceCount} difference${differenceCount !== 1 ? 's' : ''}</div>
+                        <div style="color: #94a3b8; font-size: 0.9rem;">Mode: ${modeLabel}</div>
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <span style="display: inline-block; width: 15px; height: 15px; background: rgba(251, 191, 36, 0.4); border-left: 3px solid #fbbf24;"></span>
+                            <span style="color: #94a3b8; font-size: 0.9rem;">Changed lines</span>
+                        </div>
+                    `;
+                    
+                    if (mode === 'char') {
+                        statsHTML += `
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <span style="display: inline-block; width: 20px; height: 15px; background: #ef4444; border-radius: 2px;"></span>
+                                <span style="color: #94a3b8; font-size: 0.9rem;">Removed characters</span>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <span style="display: inline-block; width: 20px; height: 15px; background: #34d399; border-radius: 2px;"></span>
+                                <span style="color: #94a3b8; font-size: 0.9rem;">Added characters</span>
+                            </div>
+                        `;
+                    } else {
+                        statsHTML += `
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <span style="display: inline-block; width: 15px; height: 15px; background: rgba(239, 68, 68, 0.4); border-left: 3px solid #ef4444;"></span>
+                                <span style="color: #94a3b8; font-size: 0.9rem;">Removed lines</span>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <span style="display: inline-block; width: 15px; height: 15px; background: rgba(52, 211, 153, 0.4); border-left: 3px solid #34d399;"></span>
+                                <span style="color: #94a3b8; font-size: 0.9rem;">Added lines</span>
+                            </div>
+                        `;
+                    }
                 }
 
                 statsHTML += `
@@ -958,7 +1049,47 @@
             } catch (error) {
                 alert('Error: ' + error.message);
             }
-        });
+        }
+
+        // Character-level difference highlighting
+        function highlightCharDifferences(str1, str2) {
+            const escaped1 = escapeHtml(str1);
+            const escaped2 = escapeHtml(str2);
+            
+            let result1 = '';
+            let result2 = '';
+            
+            const maxLen = Math.max(str1.length, str2.length);
+            
+            for (let i = 0; i < maxLen; i++) {
+                const char1 = str1[i] !== undefined ? escapeHtml(str1[i]) : '';
+                const char2 = str2[i] !== undefined ? escapeHtml(str2[i]) : '';
+                
+                if (char1 !== char2) {
+                    // Highlight different characters
+                    if (char1) {
+                        result1 += '<mark style="background: #ef4444; color: white; padding: 2px 1px; border-radius: 2px; font-weight: bold;">' + char1 + '</mark>';
+                    }
+                    if (char2) {
+                        result2 += '<mark style="background: #34d399; color: #0f172a; padding: 2px 1px; border-radius: 2px; font-weight: bold;">' + char2 + '</mark>';
+                    }
+                } else {
+                    result1 += char1;
+                    result2 += char2;
+                }
+            }
+            
+            return { line1: result1, line2: result2 };
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            return text.replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#039;');
+        }
     </script>
 </body>
 </html>
